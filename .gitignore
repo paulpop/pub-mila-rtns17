@@ -33,3 +33,7 @@ archive/
 *.swp
 .aider*
 .aider/gemini_web_profile/
+main.acn
+main.glo
+main.glsdefs
+main.ist
