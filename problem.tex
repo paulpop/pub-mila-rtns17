@@ -1,0 +1,51 @@
+\section{Problem Formulation} \label{sec:problem_formulation}
+The problem addressed in this paper is: Given a \gls{tsn} network topology \gls{network}, and a set of \gls{tt} flows \gls{flows_set} and their routing, map flows to egress port queues and determine \glsfirstplural{gcl} for all egress ports in the network. This corresponds to finding a feasible schedule, i.e., feasible assignments for the following two sets of variables:
+\begin{enumerate*}[(i)]
+   \item A queue $\s[i][\l].\rho$ in egress port \l{} for each flow instance.
+   \item An offset $\f.\phi$ for the periodic transmission on data link \l{} for each frame.
+\end{enumerate*}
+
+A feasible schedule satisfies all hardware-imposed constraints while meeting safety-critical timeliness requirements.
+We wish to determine a solution such that two objectives are minimized:
+\begin{enumerate*}[(i)]
+   \item The number of queues used by \gls{tt} flows, and
+   \item the end-to-end latency for each flow.
+\end{enumerate*}
+The reason, for minimizing the number of \gls{tt} queues, is to maximize the number of queues that remain available for lower-priority traffic, such as \gls{avb} and \gls{be}.
+End-to-end latency should be minimized because it is an important \glsfirst{qos} metric in most applications.
+Furthermore, a minimized end-to-end latency means frames spend less time waiting in queues, which helps reduce memory requirements for queues.
+
+%\subsection{Schedule Feasibility} \label{sec:schedule_feasibility}
+A schedule must satisfy certain constraints, defining the solution space of feasible schedules, i.e. schedules that are both realizable in physical \gls{tsn} networks and meet the timing requirements. The three most essential constraints are:
+
+\begin{description}[leftmargin=0cm]
+   \item[Link congestion.] A data link is limited by its hardware to only transmit a single frame at a time, i.e., frames on the same link cannot overlap in the time domain. This corresponds to the property that boxes on the same row of \autoref{fig:sample_schedule} do not overlap. The link can be seen as a critical section, that can only be occupied by a single frame at a time.
+   \item[Flow transmission.] A switch cannot forward a frame until the entire frame has been buffered in the switch.
+This introduces a forwarding delay for each hop from source to destination. Due to the small synchronization error of the clocks between devices, the exact time when the entire frame has been received in a particular switch is unknown.
+Consequently, the time for forwarding the frame on the next link should take into account the worst-case synchronization error, $\delta$.
+   \item[Bounded end-to-end latency.] All \gls{tt} flows must arrive within their relative deadline, i.e., the end-to-end latency cannot exceed the deadline. End-to-end latency is defined as the time from the sender initiates transmission of the first frame and until the last frame arrives at the receiver.
+   \item[Deterministic queues.] Analogously to the \emph{link congestion} property, a queue can be considered a critical section, which can only be occupied by frames from a single flow at a time. In \autoref{fig:sample_schedule} this corresponds to the property that queue utilization boxes do not overlap in the time domain, if they belong to the same queue. In addition, there should be a $\delta$-sized spacing between queue utilization boxes of frames arriving at different ingress ports, to account for a worst-case synchronization error as explained in \autoref{sec:tsn}.
+\end{description}
+
+\subsection{Motivational Example}
+The example from \autoref{fig:sample_schedule} serves as a motivational example. The schedule is feasible with respect to the constraints of \autoref{sec:problem_formulation}, but is not optimized with respect to any of the two criteria: Queue usage and end-to-end latency. In order to improve queue usage, the frames of \s[1] and \s[2] should be rearranged in such a way that they both share the same queue in \l[SW_1, ES_3] without occupying the queue at the same time. \autoref{fig:example_schedule_queue} shows such a schedule, where they both use $q_1$. Notice that the queue utilization boxes do not overlap.
+\begin{figure}[t]
+\centering
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/example_schedule_queue}
+        \caption{Minimum queue usage}
+        \label{fig:example_schedule_queue}
+   \end{subfigure}
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/example_schedule_e2e}
+        \caption{Minimum end-to-end latency}
+        \label{fig:example_schedule_e2e}
+   \end{subfigure}
+   \caption{Improved alternatives to \autoref{fig:sample_schedule}}
+\end{figure}
+
+
+Minimizing queue usage has a negative effect on end-to-end latency. In \autoref{fig:example_schedule_queue} the frames of \s[2] have been spaced further apart, thereby increasing the end-to-end latency. Instead, the schedule could be optimized with respect to end-to-end latency as shown in \autoref{fig:example_schedule_e2e}.
+In this schedule, two queues are used but the frames of \s[2] are grouped closer together compared to \autoref{fig:sample_schedule} and \autoref{fig:example_schedule_queue} resulting in a smaller end-to-end latency. This motivational example shows that a desirable schedule is a tradeoff between queue usage and end-to-end latency.

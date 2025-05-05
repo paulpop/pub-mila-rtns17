@@ -1,0 +1,157 @@
+\section{TSN Protocol} \label{sec:tsn}
+\gls{tsn} is based on a switched multi-hop network architecture adopted from \IEEE{802.3 Ethernet}.
+Switches interconnect end systems via \emph{full-duplex} links, meaning that the physical links enable transmission in both directions simultaneously.
+\autoref{fig:architecture_full_detail} shows a \gls{tsn} network architecture corresponding to the architecture model in \autoref{fig:architecture_model}.
+
+\begin{figure}[b]
+    \centering
+    \includegraphics[width=0.40\textwidth]{figures/architecture_full_detail}
+    \caption{\gls{tsn} network with internal queues and gates}
+    \label{fig:architecture_full_detail}
+%    \vspace{-0.5cm}
+\end{figure}
+
+Ethernet frames contain \IEEE{802.1Q} headers~\cite{8021q}, with two fields of importance to \gls{tt} traffic:
+\begin{enumerate*}[(1)]
+   \item \gls{vid} is a 12-bit field specifying the Virtual LAN of a frame. This is used to distinguish frames from different messages.
+   \item \gls{pcp} is a 3-bit field specifying the priority level, i.e., the traffic class such as \gls{tt}, \gls{avb}, or \gls{be}.
+   Furthermore, it defines which queue the frame is assigned to within a switch.
+\end{enumerate*}
+
+An Ethernet switch has ingress (incoming) and egress (outgoing) ports connecting it via links to surrounding switches and end systems.
+Each egress port typically has eight queues for storing frames that wait to be forwarded on the corresponding link, as shown for $SW_1$ in \autoref{fig:architecture_full_detail}.
+When frames from critical flows arrive at ingress ports they are filtered into queues based on their stream identification using the per stream filtering and policing functionality defined in \IEEE{802.1Qci}.
+
+\IEEE{802.1ASrev} defines a network-wide time-synchronization protocol which effectively achieves a global notion of time across all switches and end systems.
+Clocks must be comparable across devices, if forwarding of frames is to be controlled accurately.
+The time-synchronization protocol achieves a microsecond network precision, denoted by $\delta$.
+The difference in the internal clocks of any two devices at any point in time is at most $\delta$.
+\begin{figure*}[t]
+\centering
+	\begin{subfigure}{0.4\linewidth}
+      \centering
+      %\small
+      \bgroup
+      \setlength\tabcolsep{0.1cm}
+      \begin{tabular}{lccccccccccccc}
+             & $t_0$ & $t_1$ & $t_2$ & $t_3$ & $t_4$ & $t_5$ & $t_6$ & $t_7$ & $t_8$ & $t_9$ & $t_{10}$ & $t_{11}$ & $t_{12}$ \\ \hline
+      $q_1$  & 0     & 1     & 0     & 0     & 0     & 0     & 1     & 0     & 0     & 0     & 1        & 0        & 0        \\
+      $q_2$  & 0     & 0     & 1     & 0     & 1     & 0     & 0     & 0     & 1     & 0     & 0        & 1        & 0        \\
+      $q_3$  & 1     & 0     & 0     & 1     & 0     & 1     & 0     & 1     & 0     & 1     & 0        & 0        & 1        \\
+      \ldots &      &      &      &      &      &      & \hspace{-0.2cm} \ldots \hspace{-0.2cm}     &      &      &      &         &         &         \\
+      $q_8$  & 1     & 0     & 0     & 1     & 0     & 1     & 0     & 1     & 0     & 1     & 0        & 0        & 1       
+      \end{tabular}
+      \egroup
+      \caption{\gls{gcl} for egress port \l[SW_1, ES_3]}
+      \label{tab:gcl_sample}
+	\end{subfigure}
+	\begin{subfigure}{0.55\linewidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/example_schedule}
+	   \caption{Example schedule}
+      \label{fig:sample_schedule}
+	\end{subfigure}
+   \caption{Example \gls{gcl} and schedule; \autoref{tab:gcl_sample} corresponds to Row \l[SW_1, ES_3] in \autoref{fig:sample_schedule}.}
+   \label{fig:sample}
+\end{figure*}
+Utilizing the global network clock, \IEEE{802.1Qbv} defines a \gls{tas} concept which enables scheduling of high priority traffic.
+\gls{tas} controls a gate for each queue.
+Frames in a queue are only eligible for transmission if the queue gate is open.
+$SW_1$ in \autoref{fig:architecture_full_detail} has two ingress ports and a single egress port.
+Egress ports are depicted as boxed arrow tails, ingress ports as boxed arrow heads, and data links as the lines in-between.
+Every queue of the egress port has an associated gate.
+In our example in \autoref{fig:architecture_full_detail}, the gate of the topmost queue is open, enabling the red frame to be selected for transmission.
+Interference from lower priority traffic is prevented by closing the gates of the remaining queues.
+When the egress port is idle, the next frame is selected for transmission from the queue with highest priority among the queues with open gates.
+Opening queues in a mutually-exclusive fashion, allows for full control of frame forwarding.
+
+A \glsfirst{gcl} defines for each egress port, when the queue gates are open and closed.
+In \autoref{fig:architecture_full_detail} they are depicted as white tables below queues. 1 and 0 in the \gls{gcl} represent an open and closed gate, respectively.
+For instance, the gate in $ES_1$ is open at time $t_0$ but closed at $t_1$ and $t_2$, and conversely for the gate in $ES_2$.
+Using the \glsplural{gcl} to schedule forwarding of frames in a route from sender to receiver, enables \gls{tt} traffic suitable for hard real-time communication. \autoref{tab:gcl_sample} shows the full \gls{gcl} for all time events of egress port $\l[SW_1,ES_3]$.
+
+The \glsplural{gcl} can be constructed in such a way that \gls{avb} and \gls{be} traffic are prevented from initiating transmission in time slots reserved for \gls{tt} frames.
+However, nondeterminism could still occur due to interference with other \gls{tt} flows. When a frame is scheduled for transmission on a link in a given time interval, the corresponding \gls{gcl} is set to open the associated gate in that interval.
+Suppose something goes wrong, so the frame is not fully received, or is not the first frame in the queue as expected. Then the link transmits the wrong frame or remains idle when it should be transmitting.
+Consequently, nondeterminism is introduced, which means timeliness is compromised.
+Nondeterminism can occur in queues in two scenarios:
+\begin{enumerate*}[(i)]
+   \item Frames arriving on different ingress ports are scheduled to arrive at roughly the same time.
+   Due to the clock synchronization error, the order in which frames are queued is nondeterministic, and could vary from period to period.  \autoref{fig:non_determinism_arrival_times} illustrates nondeterminism due to clock synchronization error.
+   
+   \item If a frame is lost for some reason, it of course introduces nondeterminism for that particular flow, but it could also affect frames of other flows if they are in the same queue, as shown in \autoref{fig:non_determinism_frame_loss}.
+\end{enumerate*}
+To enforce determinism, queue-sharing flows should be scheduled carefully.
+Frames of such flows must be scheduled so their arrival times are so far apart that the arrival order is deterministic even with the maximal clock synchronization error ($\delta$), and such that only frames of one of the flows are present in the queue at a time.
+This is shown in \autoref{fig:non_determinism_solution}.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}{\linewidth}
+      \centering
+	   \includegraphics[width=0.49\linewidth]{figures/non_determinism_arrival_times_a}
+      \includegraphics[width=0.49\linewidth]{figures/non_determinism_arrival_times_b}
+	   \subcaption{Clock synchronization error}
+      \label{fig:non_determinism_arrival_times}
+	\end{subfigure}
+	\begin{subfigure}{\linewidth}
+      \centering
+	   \includegraphics[width=0.49\linewidth]{figures/non_determinism_frame_loss_a}
+	   \includegraphics[width=0.49\linewidth]{figures/non_determinism_frame_loss_b}
+	   \subcaption{Frame loss}
+      \label{fig:non_determinism_frame_loss}
+	\end{subfigure}
+	\begin{subfigure}{\linewidth}
+      \centering
+	   \includegraphics[width=0.49\linewidth]{figures/non_determinism_solution_a}
+	   \includegraphics[width=0.49\linewidth]{figures/non_determinism_solution_b}
+	   \subcaption{Determinism is enforced by scheduling flows far apart}
+      \label{fig:non_determinism_solution}
+	\end{subfigure}
+   \caption{Non-deterministic queue behaviour}
+	\label{fig:non_determinism}
+\end{figure}
+
+
+%a lower priority frame is already transmitting on the link at the beginning of a time slot.
+%There are two ways to prevent this. The first option is to place an MTU-sized \emph{guard band} before every \gls{tt} time slot.
+%The guard band closes all other queues well in advance to ensure that the link is available when it is time to transmit the \gls{tt} frame.
+%This option is undesirable because it decreases the bandwidth available for lower-priority traffic.
+%The second option is to let the \gls{tt} frames \emph{preempt} to lower priority queues as defined in \IEEE{802.1Qbu}.
+%When a frame is preempted, its transmission is temporarily paused, so the link becomes available to a higher-priority frame.
+%Once transmission of the higher-priority frame completes, transmission of the preempted frame is resumed. A header is added to each fragment of the preempted frame, which increases the total overhead associated with the frame.
+%However, the overhead is negligible compared to an MTU-size guard band. Thus, preemption is the preferred method, if supported by the hardware.
+
+Each \gls{gcl} has a temporal granularity which we refer to as the \emph{macrotick}.
+For simplicity, and without loss of generality, we assume that all \gls{gcl}s have a macrotick of \mus{1}.
+This makes comparing \glsplural{gcl} across different switches straightforward.
+
+\autoref{fig:architecture_full_detail} shows the state of the network at time $t_1$. At this point in time, the first gate in $SW_1$ is open, while the others are closed, as defined in column $t_1$ of the \gls{gcl}.
+A red frame is queued in $q_1$ of $SW_1$, and the link connecting $SW_1$ and $ES_3$ is idle.
+Consequently, the frame in $q_1$ is chosen for transmission because $q_1$ is the only queue with an open gate.
+This is illustrated with the red arrow.
+In parallel, a frame, illustrated with a blue arrow, is being transmitted from $ES_2$ to $SW_1$ because the gate in $ES_2$ is open.
+The PCP field of the frame dictates that it is filtered into $q_2$ in $SW_1$.
+The gate of this queue is closed at time $t_1$, so it cannot interfere with transmission of the red frame.
+At time $t_2$, the red frame has finished transmission.
+From the $t_2$-column of the \gls{gcl} in $SW_1$, it is seen that $q_1$ closes and $q_2$ opens, causing the blue frame to be transmitted to $ES_3$.
+
+\section{GCL Schedule} \label{sec:gcl_schedule}
+\glsplural{gcl} for all egress ports make up a deterministic schedule of when to send \gls{tt} frames on links.
+Because of the periodic nature of flows, the \glsplural{gcl} have a certain cycle time after which they start over from the beginning.
+Consequently, the corresponding schedule repeats after this cycle duration which we denote the \emph{hyperperiod}~\cite{buttazzo1997}.
+The hyperperiod depends on the periods of the individual flows because the period of each flow must be a divisor of the hyperperiod, i.e., every flow period repeats an integral number of times within the hyperperiod.
+Hence, the hyperperiod is the \gls{lcm} of all the flow periods.
+
+\autoref{fig:sample_schedule} shows a schedule for transmitting the frames of \s[1] and \s[2] from \autoref{tab:application_model} illustrated as a variant of a Gantt chart~\cite{sinnen2007}. The schedule uses \autoref{tab:gcl_sample} as GCL for egress port \l[SW_1, ES_3].
+The horizontal axis represents the time dimension, that is, when frames are transmitted. The vertical axis represents links and queues.
+A box represents the transmission of a frame on a link. For instance, the box labeled ``1.1'' on the row for \l[ES_1, SW_1] represents transmission of \f[1,1][{\l[ES_1, SW_1]}].
+In the figure, \s[1] is assigned to the first queue of \l[SW_1, ES_3], and \s[2] to the second, corresponding to $\s[1][{\l[SW_1, ES_3]}].\rho = 1$ and $\s[2][{\l[SW_1, ES_3]}].\rho = 2$.
+The thin rows below link \l[SW_1, ES_3] illustrate when frames are in the queues of egress port \l[SW_1, ES_3]. A frame is in a queue from the time transmission is initiated on the previous link, until the time transmission is initiated on the egress port associated with the queue. Hence, in \autoref{fig:sample_schedule}, \f[1,1][] is in $q_1$ of egress port \l[SW_1, ES_3] from $t_0$ until $t_1$ where transmission of \f[1,1][{\l[SW_1, ES_3]}] is initiated.
+
+Flow \s[1], with period \mus{100}, has three repetitions within the hyperperiod of \mus{300}, while \s[2], with period \mus{150}, has two repetitions.
+Notice, how the start time of a frame is at the same offset in each period.
+For instance, $\f[1,1][{\l[ES_1, SW_1]}]$ is transmitted at times \mus{0}, \mus{100}, and \mus{200}, corresponding to $\f[1,1][{\l[ES_1, SW_1]}].\phi = \mus{0}$. The model does not allow for different $\phi$ values in different repetitions.
+
+There is an equivalence between the set of \glsplural{gcl} for all egress ports and a schedule like the one presented in \autoref{fig:sample_schedule}.
+That is, a set of \glsplural{gcl} can be constructed from a schedule and vice versa.

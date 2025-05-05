@@ -1,0 +1,394 @@
+% Architecture Model:
+\newglossaryentry{network}{
+    name = {\ensuremath{\mathcal{G}(\mathbf{V},\mathbf{E})}},
+    description = {Directed graph of network topology},
+    sort = {G_E_V},
+}
+
+\newglossaryentry{network_short}{
+    name = {\ensuremath{\mathcal{G}}},
+    description = {Directed graph of network topology},
+    sort = {G},
+}
+
+\newglossaryentry{network_v}{
+    name = {\ensuremath{\mathbf{V}}},
+    description = {Devices in network},
+    sort = {V},
+}
+\newglossaryentry{network_e}{
+    name = {\ensuremath{\mathbf{E}}},
+    description = {Data links in network},
+    sort = {E},
+}
+
+\newglossaryentry{es_set}{
+    name = {\ensuremath{\mathbf{ES}}},
+    description = {End systems in network},
+    sort = {ES},
+}
+
+\newglossaryentry{sw_set}{
+    name = {\ensuremath{\mathbf{SW}}},
+    description = {Switches in network},
+    sort = {SW},
+}
+
+\newglossaryentry{device}{
+    name = {\ensuremath{v_a}},
+    description = {Network device, either switch or end system},
+    sort = {v_a},
+}
+
+\newglossaryentry{link}{
+    name = {\l},
+    description = {Data link from $v_a$ to $v_b$},
+    sort = {v_a_v_b},
+}
+
+\newglossaryentry{link_transmission_rate}{
+    name = {\ensuremath{\l.s}},
+    description = {Transmission rate on link \l},
+    sort = {v_a_v_b_s},
+}
+
+\newglossaryentry{link_propagation_delay}{
+    name = {\ensuremath{\l.d}},
+    description = {Propagation delay on link \l},
+    sort = {v_a_v_b_d},
+}
+
+\newglossaryentry{link_queues}{
+    name = {\ensuremath{\l.c}},
+    description = {Number of queues associated with egress port \l},
+    sort = {v_a_v_b_c},
+}
+
+\newglossaryentry{route_set}{
+    name = {\ensuremath{R_{a,b}}},
+    description = {Set of all routes from $v_a$ to $v_b$},
+    sort = {R_ab},
+}
+
+\newglossaryentry{route}{
+    name = {\ensuremath{r_k}},
+    description = {Route in network},
+    sort = {r_k},
+}
+
+\newglossaryentry{synch_error}{
+    name = {$\delta$},
+    description = {Maximum synchronization error},
+    sort = {d},
+}
+
+% Application Model:
+\newglossaryentry{flows_set}{
+    name = {\ensuremath{\mathcal{S}}},
+    description = {Set of all flows},
+    sort = {S},
+}
+
+\newglossaryentry{heuristics_set}{
+    name = {\ensuremath{\mathcal{H}}},
+    description = {Set of all flows},
+    sort = {S},
+}
+
+\newglossaryentry{frames_set}{
+    name = {\ensuremath{\mathcal{F}}},
+    description = {Set of all frames},
+    sort = {F},
+}
+
+\newglossaryentry{flow_instances_set}{
+    name = {\ensuremath{\mathcal{I}}},
+    description = {Set of all flow instances},
+    sort = {I},
+}
+
+\newglossaryentry{flow}{
+    name = {\s},
+    description = {A single flow},
+    sort = {s_i},
+}
+
+\newglossaryentry{flow_T}{
+    name = {\ensuremath{\s.T}},
+    description = {Period of \s},
+    sort = {s_i_T},
+}
+
+\newglossaryentry{flow_D}{
+    name = {\ensuremath{\s.D}},
+    description = {Deadline of \s},
+    sort = {s_i_D},
+}
+
+\newglossaryentry{flow_va}{
+    name = {\ensuremath{\s.v_a}},
+    description = {Sending end system for \s},
+    sort = {s_i_v_a},
+}
+
+\newglossaryentry{flow_vb}{
+    name = {\ensuremath{\s.v_b}},
+    description = {Receiving end system for \s},
+    sort = {s_i_v_b},
+}
+
+\newglossaryentry{flow_r}{
+    name = {\ensuremath{\s.r}},
+    description = {Route of \s},
+    sort = {s_i_r},
+}
+
+\newglossaryentry{flow_s}{
+    name = {\ensuremath{\s.s}},
+    description = {Sending link of \s},
+    sort = {s_i_s},
+}
+
+\newglossaryentry{flow_t}{
+    name = {\ensuremath{\s.t}},
+    description = {Receiving link of \s},
+    sort = {s_i_t},
+}
+
+\newglossaryentry{flow_k}{
+    name = {\ensuremath{\s.k}},
+    description = {Number of frames on each link of \s},
+    sort = {s_i_k},
+}
+
+\newglossaryentry{flow_I}{
+    name = {\ensuremath{\s.I}},
+    description = {Set of flow instances associated with \s},
+    sort = {s_i_I},
+}
+
+\newglossaryentry{flow_instance}{
+    name = {\s[i][\l]},
+    description = {Instance of flow \s{} on link \l},
+    sort = {s_i_v_a_v_b},
+}
+
+\newglossaryentry{flow_instance_rho}{
+    name = {\ensuremath{\s[i][\l].\rho}},
+    description = {Queue assignment for \s[i][\l]},
+    sort = {s_i_v_a_v_b_r},
+}
+
+\newglossaryentry{flow_instance_F}{
+    name = {\ensuremath{\s[i][\l].F}},
+    description = {Frames associated with \s[i][\l]},
+    sort = {s_i_v_a_v_b_F},
+}
+
+\newglossaryentry{frame}{
+    name = {\f},
+    description = {A single frame},
+    sort = {f_im_v_a_v_b},
+}
+
+\newglossaryentry{frame_L}{
+    name = {\ensuremath{\f.L}},
+    description = {Transmission duration of \f},
+    sort = {f_im_v_a_v_b.L},
+}
+
+\newglossaryentry{frame_phi}{
+    name = {\ensuremath{\f.\phi}},
+    description = {Periodic offset of \f},
+    sort = {f_im_v_a_v_b_ph},
+}
+
+% ILP
+\newglossaryentry{X}{
+    name = {\ensuremath{X}},
+    description = {Solution space},
+    sort = {X},
+}
+
+\newglossaryentry{x}{
+    name = {\ensuremath{x}},
+    description = {Feasible solution},
+    sort = {x},
+}
+
+\newglossaryentry{x_opt}{
+    name = {\ensuremath{x^*}},
+    description = {Optimal solution},
+    sort = {x*},
+}
+
+\newglossaryentry{z}{
+    name = {\ensuremath{z}},
+    description = {Objective value},
+    sort = {z},
+}
+
+\newglossaryentry{z_opt}{
+    name = {\ensuremath{z^*}},
+    description = {Optimal objective value},
+    sort = {z*},
+}
+
+\newglossaryentry{Kappa}{
+    name = {$\Kappa$},
+    description = {Excess queue usage},
+    sort = {K},
+}
+
+\newglossaryentry{kappa}{
+    name = {$\kappa_{a,b}$},
+    description = {Number of queues used by TT flows in \l},
+    sort = {k},
+}
+
+\newglossaryentry{Lambda}{
+    name = {$\Lambda$},
+    description = {Additional end-to-end latency},
+    sort = {L},
+}
+
+\newglossaryentry{lambda}{
+    name = {$\lambda_i$},
+    description = {End-to-end latency for \s},
+    sort = {l_i},
+}
+
+\newglossaryentry{lambda_lbound}{
+    name = {$\lbound{\lambda}_i$},
+    description = {Lower bound on end-to-end latency},
+    sort = {l_i_lbound},
+}
+
+\newglossaryentry{frame_ph_lbound}{
+    name = {\ensuremath{\f.\lbound{\phi}}},
+    description = {Lower bound on periodic offset},
+    sort = {f_im_v_a_v_b_ph_lbound},
+}
+
+\newglossaryentry{frame_ph_ubound}{
+    name = {\ensuremath{\f.\ubound{\phi}}},
+    description = {Upper bound on periodic offset},
+    sort = {f_im_v_a_v_b_ph_ubound}
+}
+
+\newglossaryentry{A}{
+    name = {$A$},
+    description = {Set of repetitions of \s[i] within hyperperiod},
+    sort = {A},
+}
+
+\newglossaryentry{B}{
+    name = {$B$},
+    description = {Set of repetitions of \s[j] within hyperperiod},
+    sort = {B},
+}
+
+\newglossaryentry{alpha}{
+    name = {$\alpha$},
+    description = {Individual repetition of \s[i] within hyperperiod},
+    sort = {a},
+}
+
+\newglossaryentry{beta}{
+    name = {$\beta$},
+    description = {Individual repetition of \s[j] within hyperperiod},
+    sort = {b},
+}
+
+\newglossaryentry{M}{
+    name = {$M$},
+    description = {Theoretically infinitely large constant},
+    sort = {M},
+}
+
+\newglossaryentry{sigma}{
+    name = {$\sigma$},
+    description = {Variable for modeling disjunction},
+    sort = {s},
+}
+
+\newglossaryentry{epsilon}{
+    name = {$\epsilon$},
+    description = {Variable for modeling identical queue assignments},
+    sort = {e},
+}
+
+\newglossaryentry{omega}{
+    name = {$\omega$},
+    description = {Variable for modeling disjunction},
+    sort = {o},
+}
+
+% Heuristic
+\newglossaryentry{Phi_alpha}{
+    name = {$\Phi_{\alpha}$},
+    description = {Feasible region in repetition $\alpha$},
+    sort = {Ph_alpha},
+}
+
+\newglossaryentry{Phi_cap}{
+    name = {$\Phi_{\cap}$},
+    description = {Feasible regions intersection},
+    sort = {Ph_intersection},
+}
+
+\newglossaryentry{phi_lbound}{
+    name = {$\lbound{\phi}$},
+    description = {Function for lower bound on period offsets},
+    sort = {ph_lbound},
+}
+
+\newglossaryentry{frame_repetitions_set}{
+    name = {\ensuremath{\mathcal{R}}},
+    description = {Set of all frame repetitions},
+    sort = {R},
+}
+
+% Metaheuristic
+\newglossaryentry{gamma}{
+    name = {$\gamma$},
+    description = {Length of \gls{rcl}},
+    sort = {g},
+}
+
+\newglossaryentry{pi}{
+    name = {$\pi$},
+    description = {Maximum number of flows to destroy},
+    sort = {p},
+}
+
+\newglossaryentry{l}{
+    name = {$l$},
+    description = {Ratio of time spent in local search phase},
+    sort = {l},
+}
+
+\newglossaryentry{a}{
+    name = {$a$},
+    description = {Local search strategy},
+    sort = {a},
+}
+
+\newglossaryentry{f}{
+    name = {\ensuremath{f(x)}},
+    description = {Metaheuristic objective function},
+    sort = {f},
+}
+
+\newglossaryentry{D_pi}{
+    name = {\ensuremath{D_{\pi}(x)}},
+    description = {Combinations of choosing $\pi$ link-sharing flows from $x$},
+    sort = {D_p},
+}
+
+%\setglossarystyle{mynotation}
+%\printglossary[title=Notations]
+
+%\vspace{-1cm}
+
+%\glsaddall

@@ -1,0 +1,43 @@
+\section{Application Model} \label{sec:application_model}
+The application model represents \glsfirst{tt} communication on network \gls{network}. In this paper, we consider periodic \gls{tt} messages, called \emph{flows}. The set of \gls{tt} flows is denoted \gls{flows_set}. Associated with each \gls{tt} flow \s{} is the tuple of attributes $(v_s, v_t, r, T, D, P, k)$.
+Attribute $v_s$ denotes the sending end system, $v_t$ denotes the receiving end system, and $r \in R_{s,t}$ denotes a route in the network from $v_s$ to $v_t$ on which the message is forwarded. $T$ denotes the period in microseconds after which the message is repeated. $D$ denotes the relative deadline for when the entire message must be received in $v_t$. The deadline upper bounds the end-to-end latency of the flow. We assume that $D \leq T$. $P$ denotes the payload, or data size, of \s, and $k$ denotes the number of frames required to carry the entire message.
+Hence, every $T$ microseconds, a message of $P$ bytes, in the form of a sequence of $k$ frames, is sent on the network via route $r$ from end system $v_s$ to end system $v_t$, such that the end-to-end latency is below $D$. \autoref{tab:application_model} shows two sample flows \s[1] and \s[2] with associated attributes for the architecture in \autoref{fig:architecture_model}.
+
+A single Ethernet frame transmits a payload of at most 1500 bytes (B), the so-called \gls{mtu}.
+If the data size is larger than \gls{mtu}, the message is fragmented into multiple frames.
+The number of frames needed to transmit a message with data size $P$ is $k = \lceil \frac{P}{MTU} \rceil$, where it is assumed that all frames are \gls{mtu}-sized, except for the last one.
+\begin{table}[b]
+\centering
+\begin{tabular}{cccccccc}
+flow  & $v_s$  & $v_t$  & $r$   & $T$       & $D$       & $P$                 & $k$ \\ \hline
+\s[1] & $ES_1$ & $ES_3$ & $r_1$ & \mus{100} & \mus{100} & 1500 B                 & 1   \\
+\s[2] & $ES_2$ & $ES_3$ & $r_2$ & \mus{150} & \mus{150} & 4500 B & 3  
+\end{tabular}
+\caption{Set of \gls{tt} flows \gls{flows_set} with attributes}
+\label{tab:application_model}
+%\vspace{-3ex}
+\end{table}
+
+A flow \emph{instance}, denoted $\s[i][\l]$, is the instance of a flow \s{} on a particular link \l.
+There is one such flow instance for each link in the route $\s.r$.
+The flow instance concept is introduced to capture the assignment of frames to egress port queues.
+Recall that \l{} denotes the link between devices $v_a$ and $v_b$ as well as the egress port in $v_a$ towards $v_b$.
+The frames of $\s[i][\l]$ are queued in egress port \l{} during transmission.
+An attribute $\rho$ is associated with each flow instance. It specifies to which queue the frames of \s{} are assigned in egress port \l, thus it is upper bounded by the number of queues in the device ($\l.c$).
+The flow instance concept ensures that all frames of \s{} are assigned the same queue in \l, while allowing the frames to be assigned different queues in different egress ports along route $\s.r$.
+
+The queue assignments for all flow instances $\s[i][\l]$ of egress port \l{} implicitly define a division of the $\l.c$ queues into \gls{tt} queues dedicated to \gls{tt} flows, and the remaining queues for other traffic classes. Note that if \l{} is used for critical traffic it must have at least one \gls{tt} queue.
+
+We use \f[i,m][] to denote the $m$th frame of flow \s{}. Analogous to flow instance, \emph{frame instance} \f{} denotes the transmission of the $m$th frame of flow \s{} on link \l{}. \f{} is associated with the attribute pair $(L, \phi)$, where $L$ denotes the transmission duration in microseconds on \l{}, and $\phi$ denotes the microsecond offset of \f{} within period $\s.T$, We restrict that $\phi \in [0, \s.T-L]$, to ensure that all frames are fully transmitted within the period.
+
+The transmission duration $\f.L$ is based on the transmission rate and propagation delay of the physical link, and the total number of bytes in the packet.
+Suppose that the frame has a payload of \gls{mtu} (1500 bytes), resulting in a packet size of 1542 bytes, then the transmission duration on a 1 Gbps link with negligible propagation delay is calculated in \autoref{eq:frame_duration}.
+\begin{equation}
+   \label{eq:frame_duration}
+   \f.L = \frac{1542 \text{ B}}{[v_a,v_b].s} + [v_a, v_b].d = \frac{1542 \text{ B}}{1 \text{ Gbps}} =  \mus{12.336}
+\end{equation}
+The offset $\f.\phi$ defines the start time for transmission of \f{} within its period $\s.T$. The frame is repeatedly sent at the times given in \autoref{eq:frame_offset}.
+\begin{equation}
+   \label{eq:frame_offset}
+   \phi, \quad \s.T + \phi , \quad 2 \cdot \s.T + \phi, \quad 3 \cdot \s.T + \phi, \quad \ldots
+\end{equation}

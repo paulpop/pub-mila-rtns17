@@ -1,0 +1,173 @@
+\begin{figure*}[t]
+	\centering
+	\begin{subfigure}{0.185\linewidth}
+      \centering
+	   \includegraphics[height=2cm]{figures/small_topologies}
+	   \caption{Small; G1, G2, G3}
+      \label{fig:small_topologies}
+	\end{subfigure}
+	\centering
+	\begin{subfigure}{0.45\linewidth}
+      \centering
+	   \includegraphics[height=2cm]{figures/medium_topologies}
+	   \caption{Medium; G4, G5}
+      \label{fig:medium_topologies}
+	\end{subfigure}
+	\begin{subfigure}{0.3\linewidth}
+      \centering
+	   \includegraphics[height=2cm]{figures/topology_G7}
+	   \caption{Large; G6}
+      \label{fig:large_topology}
+	\end{subfigure}
+%\vspace{3ex}
+   \caption{Topologies for experimental evaluation}
+   \label{fig:topologies}
+\vspace{-1ex}
+\end{figure*}
+
+\section{Experimental Evaluation}
+
+In the first set of experiments we were interested to evaluate the ability of our \gls{grasp}-based approach to obtain near-optimal results in a reasonable time.
+\begin{modifiedparagraph}
+Thus, we have implemented the OMT approach from~\cite{craciunas16} and the ILP approach from~\cite{pop16}, which both minimize the number of queues ($K$). The values of $K$ are presented in the table, including the lower and upper bounds, and the normalized value. We have compared the three approaches on the test cases from~\cite{pop16}, and our GRASP has been able to obtain the same optimal solutions in under 1 second for all test cases as shown in \autoref{tab:ietcps_comparison}.
+\end{modifiedparagraph}
+\begin{table}[t]
+   \small
+\centering
+\begin{modifiedparagraph}
+\begin{tabular}{r|rrr|cccc}
+    & \multicolumn{3}{c|}{\textit{running time (s)}} & \multicolumn{4}{c}{\textit{queue usage}} \\
+ID  & ILP            & OMT           & GRASP         & $K$   & $\lbound{K}$   & $\ubound{K}$  & $K_N$  \\ \hline
+T01 & 0.66           & 0.81          & 0.32          & 2     & 2              & 5             & 0      \\
+T04 & 2.49           & 2.46          & 0.21          & 2     & 2              & 5             & 0      \\
+T05 & 3.73           & 3.43          & 0.34          & 2     & 2              & 3             & 0      \\
+T10 & 4.70           & 5.12          & 0.72          & 4     & 4              & 8             & 0      \\
+T11 & 16.54          & 12.94         & 0.84          & 3     & 3              & 7             & 0      \\
+T12 & 210.03         & 34.33         & 0.69          & 5     & 5              & 9             & 0      \\
+T14 & 39.06          & 22.87         & 0.84          & 2     & 2              & 3             & 0      \\
+T18 & 10.98          & 7.17          & 0.56          & 2     & 2              & 5             & 0     
+\end{tabular}
+\end{modifiedparagraph}
+\caption{\modifiedtext{Comparison of ILP, OMT, and GRASP}}
+\label{tab:ietcps_comparison}
+\end{table}
+
+The proposed \gls{grasp} approach is envisioned to be used as scheduling algorithm inside a configuration agent~\cite{gutierrez2015} which monitors and reschedules (parts of) the network as needed at runtime. Thus, in the second set of experiments we were interested to evaluate the ability of \gls{grasp} to find solutions in a very limited time for large test cases. 
+
+%We evaluate the proposed strategy on several test cases.
+%Generating interesting test cases is a problem in itself. If there is too much space in a schedule, every flow is trivially scheduled with low end-to-end latency and using only a single queue in each egress port. However, if the traffic of a test case is too congested, there may not exist any feasible solutions for the scheduling problem.
+We consider six topologies of varying size. The topologies are industrial sized, and are derived from the work presented in \cite{oliver14}. The topologies are grouped into three categories based on their size. There are three small topologies, two medium, and one large, shown in \autoref{fig:topologies}. Blue squares illustrate end systems and green circles illustrate switches.
+%Note, that there are no redundant routes in the topologies, i.e., there exists only one route between any pair of end systems.
+The network precision is assumed to be $\delta = \mus{5.008}$. The transmission rate for all links is fixed at 1 Gbps, and the propagation delay of each link is assumed negligible, i.e., it is set to zero. Every egress port has eight queues.
+
+The hyperperiod of all flows defines the width of the schedule, and has a major impact on the complexity of the problem. Thus, the hyperperiod is an important aspect to consider, when evaluating performance. We define three hyperperiods of \ms{1}, \ms{6}, and \ms{30}. For each choice of hyperperiod we define a set of short periods and a set of long periods as presented in~\autoref{tab:periods}.
+Short-period flows have a data size of either one, two, or three times the \gls{mtu} of 1500 bytes. Long-period flows have data sizes 10, 20, 40, 60, or 100 times \gls{mtu}. The choice of periods and data sizes are inspired by~\cite{craciunas16}.
+
+In order to generate flows, that yield difficult scheduling problems in terms of queue usage and end-to-end latencies, the link utilization should be relatively high. Hence, synthetic applications are generated by repeatedly adding short-period and long-period flows to the set of flows. The sending and receiving end systems are chosen at random among the end systems in the topology. This procedure is repeated until multi-queue scenarios arise.
+%The \gls{asap} heuristic is used as a proxy function to indicate when the network is sufficiently saturated with flows.
+%, i.e., all test cases are schedulable by the \gls{asap} heuristic, and hence, at least one feasible solution exists.
+For each choice of topology and hyperperiod, we generate 30 test cases with high link utilization. In total we use 540 test cases, 90 for each of the six topologies.
+
+\autoref{tab:test_cases_stats} shows the average number of flows and frames for every pair of topology class and hyperperiod. Overall, the test instances range from a few hundred frames to tens of thousands of frames.
+\begin{table}[b]
+   \small
+\centering
+\begin{tabular}{lll}
+hyperperiod & short periods                 & long periods   \\ \hline
+\ms{1}      & 100, 200, \mus{500}           & \ms{1}         \\
+\ms{6}      & 100, 150, 200, \mus{500}      & 1, 2, \ms{6}   \\
+\ms{30}     & 100, 150, 200, 300, \mus{500} & 5, 10, \ms{30}
+\end{tabular}
+\caption{Combinations of periods in test cases}
+\label{tab:periods}
+\vspace{0.2cm}
+\centering
+\begin{tabular}{llll}
+            & \multicolumn{3}{c}{\emph{topology size}}            \\
+   hyperperiod  & small       & medium        & large          \\ \hline
+   \ms{1}  & $(17, 174)$ & $(61, 548)  $ & $(358, 2078)$  \\
+   \ms{6}  & $(15, 436)$ & $(55, 1193)$  & $(254, 3682)$  \\
+   \ms{30} & $(18, 737)$ & $(63, 2944)$  & $(327, 15167)$
+\end{tabular}
+\caption{Average number of (flows, frames) of test cases}
+\label{tab:test_cases_stats}
+\vspace{-0.2cm}
+\end{table}
+
+We wish to experimentally evaluate GRASP in terms of its ability to minimize queue usage as well as end-to-end latency.
+\begin{modifiedparagraph}
+To this end, we introduce two objective function configurations $f_K(x) = K_N(x)$ and $f_\Lambda(x) = \Lambda_N(x)$ corresponding to $c_1 = 1, c_2 = 0$ and $c_1 = 0, c_2 = 1$, respectively (see \autoref{sec:objective_function}).
+\end{modifiedparagraph}
+
+%\begin{figure}[b]
+%\centering
+%	\begin{subfigure}{\linewidth}
+%        \centering
+%        \includegraphics[width=\linewidth]{figures/plot1a}
+%        \vspace{-0.6cm}
+%        \caption{Queue usage for individual instances}
+%        \vspace{0.4cm}
+%        \label{fig:ilp_grasp_q}
+%   \end{subfigure}
+%	\begin{subfigure}{\linewidth}
+%        \centering
+%        \includegraphics[width=\linewidth]{figures/plot1b}
+%        \vspace{-0.6cm}
+%        \caption{End-to-end latency for individual instances}
+%        %\vspace{0.4cm}
+%        \label{fig:ilp_grasp_e2e}
+%   \end{subfigure}
+%   \caption{Comparison of GRASP and ILP} \label{fig:ilp_grasp}
+%\end{figure}
+
+\autoref{fig:grasp_heuristic_q} and \autoref{fig:grasp_heuristic_e2e} show a comparison of GRASP and the heuristic approach.
+For the heuristic approach, each test case is solved using all heuristic variations (\autoref{fig:heuristic_variations}) and then the best schedule is chosen.
+\begin{modifiedparagraph}
+\autoref{fig:grasp_heuristic_q} shows normalized values for queue usage ($K_N$) and \autoref{fig:grasp_heuristic_e2e} shows normalized values for end-to-end latency ($\Lambda_N$). The visualizations are based on average values for all topologies and hyperperiods (540 test cases in total).
+\end{modifiedparagraph}
+GRASP improves queue usage as well as end-to-end latency for all topologies and hyperperiods compared to the heuristic.
+\modifiedtext{The average reduction is 40\% for $K_N$ and 33\% for $\Lambda_N$.}
+The heuristic has an average execution time of 28 seconds compared to 15 minutes for GRASP.
+
+\begin{modifiedparagraph}
+Furthermore, we have extended the ILP formulation presented in \cite{pop16}, which minimizes queue usage, to also feature end-to-end latency minimization.
+For the ILP formulation, the Gurobi~\cite{gurobi} solver was given a time limit of 4 hours, after which it returns the best feasible solution.
+The ILP approach is intractable for many of the test instances, especially for larger hyperperiods.
+The results are compared with GRASP in \autoref{fig:grasp_ilp_q} and \autoref{fig:grasp_ilp_e2e} for the subset of test cases solved by ILP.
+Some data points are missing, because the ILP approach was unable to find feasible solutions within the time limit. The ILP approach was able to solve 48\% of the instances when minimizing queue usage and 42\% when minimizing latency.
+On average, the ILP approach produced schedules with 17\% lower queue usage in \autoref{fig:grasp_ilp_q} and 51\% lower end-to-end latency in \autoref{fig:grasp_ilp_e2e}, but had a 15--20 times longer execution time.
+\end{modifiedparagraph}
+
+\begin{figure}[t]
+\centering
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/plot2a}
+        \caption{\modifiedtext{Average queue usage for GRASP and heuristic}}
+        \label{fig:grasp_heuristic_q}
+   \end{subfigure}
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/plot2b}
+        \caption{\modifiedtext{Average end-to-end latency for GRASP and heuristic}}
+        \label{fig:grasp_heuristic_e2e}
+   \end{subfigure}
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/plot4a}
+        \caption{\modifiedtext{Average queue usage for GRASP and ILP}}
+        \label{fig:grasp_ilp_q}
+   \end{subfigure}
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/plot4b}
+        \caption{\modifiedtext{Average end-to-end latency for GRASP and ILP}}
+        \label{fig:grasp_ilp_e2e}
+   \end{subfigure}
+   \caption{\modifiedtext{Comparison of GRASP, heuristic and ILP}}
+\label{fig:grasp_ilp_heuristic}
+\end{figure}
+
+%The ILP approach is intractable for large instances, hence, where data points are missing, the ILP approach was unable to find feasible solutions within the time limit.
+
+\gls{grasp} is able to significantly improve execution time compared to the \gls{ilp} approach which is intractable for large instances, and is able to produce better schedules than a pure heuristic approach. Its ability to minimize the objectives could be improved by increasing the time limit. Conversely, the time limit can be decreased in order to compute feasible schedules quickly. This flexibility makes \gls{grasp} well-suited to be used for runtime reconfiguration, where the schedule must adapt to changes in network traffic. 

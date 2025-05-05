@@ -1,0 +1,60 @@
+\vspace{-0.1cm}
+\section{Introduction}
+In this paper, we are interested in safety-critical real-time applications implemented using distributed cyber-physical systems. There are several communication protocols on the market, depending on the application area, e.g., FlexRay for automotive, AFDX for avionics, and EtherCAT for industrial automation.
+However, emerging applications, e.g., Advanced Driver Assistance Systems (ADAS), autonomous driving, or Industry 4.0, have increasing bandwidth demands.
+For instance, autonomous driving requires data rates of at least 100 Mbps for graphical computing based on camera, radar, and LiDAR data, whereas CAN and FlexRay only provide data rates of up to 1 Mbps and 10 Mbps, respectively.
+
+The well-known networking standard \IEEE{802.3 Ethernet}~\cite{8023} meets the emerging bandwidth requirements for safety-critical networks, while remaining scalable and cost-effective.
+It does, however, lack real-time and dependability capabilities~\cite{decotignie5}.
+Many extensions, such as EtherCAT, PROFINET, ARINC 664p7~\cite{ARINC2009}, and TTEthernet~\cite{ttethernet11}, have been suggested and are used in the industry.
+Although they satisfy the timing requirements, they are incompatible with each other, and as a result, they cannot operate on the same physical links in a network without losing real-time guarantees~\cite{duerr16}.
+Consequently, the \IEEE{802.1 \glsfirst{tsn}} task group~\cite{8021tsn} has been working since 2012 on standardizing real-time and safety-critical enhancements for Ethernet.
+
+In Ethernet networks, messages are transmitted between end systems as \emph{frames}.
+Frames are forwarded on links, through switches, on a route from sender to one or multiple receivers.
+They queue up in switches during transmission while waiting for the next link in the route to become available.
+Each switch has multiple queues, and frames are filtered into queues based on their priority.
+When a link becomes available a new frame is chosen for transmission starting from the highest priority queue.
+Hence, the queueing delay for each frame depends on its priority, on how many other frames are queued in front of it, and on the availability of the next link.
+This leads to network congestion causing nondeterministic behavior.
+
+We consider networks as defined in the \gls{tsn} standard.
+In such networks, applications with different timeliness requirements coexist. We divide network traffic into three traffic types based on criticality level:
+\gls{tt} flows for critical traffic, e.g., hard real-time communication, \gls{avb} flows with bounded end-to-end latency, and finally \gls{be} messages. In this paper, we focus on \gls{tt} traffic. \gls{tsn} defines mechanisms for forwarding queued frames from a specific queue at precise points in time.
+This is implemented by blocking the other queues and relies on static schedule tables, denoted \glsfirstplural{gcl}, for deciding when to block each queue.
+Along with \IEEE{802.1ASrev} for achieving clock synchronization across network devices, these mechanisms provide the basic building blocks for determinism and bounded end-to-end latency.
+It is, however, beyond the scope of \gls{tsn} to define how to synthesize \glsplural{gcl}.
+
+The focus of this paper is on the scheduling problem for \gls{tt} traffic: Given the \gls{tsn} network topology, the \gls{tt} frames and their routing we want to determine the \glsplural{gcl} for \gls{tt} traffic in order to guarantee timeliness.
+The schedule must ensure that all deadlines are satisfied and should be optimized to meet industrial application demands~\cite{ousterhout2013, craciunas16combined} for minimal latency and jitter. The schedule must facilitate a high \gls{qos} for \gls{avb} and \gls{be} traffic by using a minimal number of queues in switches, thereby leaving as many queues as possible available for the lower-priority traffic classes. We propose a \gls{grasp}-based strategy for synthesizing \glsplural{gcl} with minimized queue utilization and end-to-end latency.
+
+There is a strong interest in the industry in adaptive networks that can support safety-critical real-time applications~\cite{emc2}. For example, industrial applications require dynamic reconfiguration to meet new business demands, allowing computation and communication services to evolve over time with minimal disruption. Hence, we are interested in solutions which can be used to perform runtime reconfiguration, i.e., they have to derive good quality schedules in a short time. In \gls{tsn}, runtime reconfiguration is supported by the extension \IEEE{802.1Qcc}, which allows a ``Centralized Network Configurator'' to update the network configuration at runtime.
+
+\subsection{Related Work}
+Synthesizing schedules for distributed real-time applications is a well-studied problem.
+It consists of two coupled problems: Scheduling tasks at the processor level and scheduling frames at the network level.
+Real-time applications rely on timeliness at both levels.
+In \cite{craciunas16combined} the two problems are solved jointly using a \gls{smt} approach, and Zhang et al.~\cite{zhang2014} propose a \gls{mip} approach for the joint problem.
+
+In this paper, we focus on synthesizing schedules at the network level.
+In the context of TTEthernet, numerous strategies have been proposed for scheduling frames on network links.
+Steiner~\cite{steiner2010} models the problem as a set of constraints to which a feasible solution is found using an \gls{smt}-solver.
+In \cite{steiner2011} the same author proposes an extension to the \gls{smt} approach where blank spaces are left between TT frames to avoid starvation of lower-priority frames, thereby improving \gls{qos}. Pozo et al.~\cite{pozo2015} improve scalability of the \gls{smt}-based approach for TTEthernet by decomposing the problem into subproblems which are solved independently.
+
+Other approaches have also been proposed, such as a Tabu Search-based metaheuristic~\cite{tamas2014} which minimizes end-to-end latency of lower priority traffic. Avni et al.~\cite{avni2016} propose a scheduling strategy where switches have an error-recovery protocol, enabling them to utilize secondary paths in case of link failures.
+
+Recent work has addressed the scheduling problem for \gls{tsn} as well. \gls{tsn} and TTEthernet are similar in many ways, but differ in some significant aspects: Messages in TTEthernet consist of a single frame, whereas TSN messages may consist of multiple frames.
+Furthermore, TTEthernet schedule tables are specified for individual frames, whereas \gls{tsn} specifies schedules for the queues, not frames.
+Consequently, all frames sharing the same queue are affected by the associated schedule table.
+As a result, the work on TTEthernet scheduling is not directly applicable to \gls{tsn} networks.
+
+D{\"u}rr and Nayak~\cite{duerr16} relate the \gls{tsn} scheduling problem to the ``No-wait Job-shop Scheduling Problem'' in order to achieve schedules with minimum network delay for \gls{tt} messages. They assume that a single queue is reserved for TT traffic in every outgoing port and that all messages are transmitted with the same period. With these assumptions they achieve near-optimal schedules with a Tabu Search-based approach.
+
+Craciunas et al.~\cite{craciunas16} identify issues affecting determinism in \gls{tsn} schedules and define additional \gls{tsn}-specific constraints for overcoming these issues.
+Furthermore, they propose an \gls{smt}-based approach where the assumptions from \cite{duerr16} have been relaxed, i.e., TT traffic may utilize multiple queues, and messages have individual periods.
+Assigning \gls{tt} traffic to multiple queues adds flexibility and enables finding feasible schedules in scenarios with high link utilization.
+However, queue usage should in general be minimized where possible in order to make queues available for lower-priority traffic.
+Thus, \cite{craciunas16} also presents an \gls{omt} approach for minimizing queue usage.
+Pop et al.~\cite{pop16} propose an \gls{ilp}-based strategy as an alternative to the \gls{smt} approach of \cite{craciunas16}, but apart from that they define the problem in the same way.
+
+\textbf{Contribution:} The previous work has proposed SMT and ILP formulations for the \gls{gcl} synthesis problem such that the queue usage is minimized. These solutions do not scale for realistic problem sizes, and do not address the latency minimization, which is important for a large class of applications. In this paper, we formulate the \gls{gcl} synthesis as a multi-objective optimization problem, targeting both queue usage and latency minimization. We propose a scalable \gls{grasp}-based approach, which relies on a scheduling heuristic in order to provide good quality solutions in a short time for large test cases.

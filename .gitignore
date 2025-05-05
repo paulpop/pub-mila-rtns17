@@ -1,0 +1,35 @@
+# LaTeX compilation artifacts
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.pdf
+*.ps
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*.xdv
+
+# Minted package temporary files
+_minted*
+
+# Archive folder
+archive/
+
+# Other temporary files (e.g., editor backups)
+*~
+*.bak
+*.swp
+.aider*
+.aider/gemini_web_profile/

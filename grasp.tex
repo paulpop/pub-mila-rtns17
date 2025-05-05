@@ -1,0 +1,280 @@
+\section{GRASP-based GCL Synthesis}
+The NP-complete flow-shop scheduling problem~\cite{garey1976} reduces to the \gls{tt} scheduling problem~\cite{raagaardthesis}.
+Hence, we solve the NP-hard problem of scheduling \gls{tt} flows using \glsfirst{grasp}~\cite{resende14}.
+The \gls{grasp} metaheuristic is well-suited for combinatorial optimization problems, where an initial solution is efficiently constructed in a greedy manner.
+Each iteration of \gls{grasp} consists of two phases: A construction phase, where an initial feasible solution is built, and a search phase, where a neighborhood around the initial solution is examined for improving solutions. The construction phase contributes with diversification, and the local search with intensification, ensuring convergence towards a global optimum. Note, however, that \gls{grasp}, being a metaheuristic, is not guaranteed to find the optimum.
+
+For the \gls{tt} scheduling problem, the construction phase is a polynomial-time algorithm, which greedily schedules flows one at a time, thereby constructing an initial feasible solution. The local search phase looks for improving solutions by removing parts of the schedule and rescheduling them differently.
+
+\autoref{alg:grasp} describes the overall strategy of \gls{grasp} for the \gls{tt} scheduling problem.
+\begin{@empty}
+\begin{algorithm}[b]
+\small
+\caption{GRASP metaheuristic} \label{alg:grasp}
+	\begin{algorithmic}[1]
+		\Function{GRASP}{\gls{flows_set}, $\gamma$, $\pi$, \gls{heuristics_set}}
+			\State $x \gets \emptyset$ \label{algline:x_empty}
+			\Repeat
+				\State $x' \gets \Call{GreedyRandomized}{\gls{flows_set}, \gamma, \gls{heuristics_set}}$ \label{algline:construction_phase}
+				\State $x' \gets \Call{LocalSearch}{x', \gls{flows_set}, \pi, \gls{heuristics_set}}$ \label{algline:local_search_phase}
+				\If{$f(x') < f(x)$} \label{algline:objective_comparison}
+					\State $x \gets x'$ \label{algline:update_best}
+				\EndIf
+			\Until{exceeding time limit} \label{algline:stop_criterion}
+			\State \Return{$x$}
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+\end{@empty}
+As input it takes the problem instance, i.e., the set of flows \gls{flows_set}, as well as two parameters, $\gamma$ and $\pi$, related to the construction and local search phases, respectively. Furthermore, it takes a set of heuristics \gls{heuristics_set} for scheduling individual flows. In \autoref{sec:heuristics} we discuss the details of the heuristics.
+\autoref{alg:grasp} outputs a feasible schedule $x$, which is the best solution found throughout the search. Initially, $x$ is empty (line \ref{algline:x_empty}), indicating that a feasible solution is yet to been found, i.e., the set of scheduled flows is empty.
+
+In each iteration, a new solution $x'$ is generated in a greedy randomized fashion (line \ref{algline:construction_phase}) using a constructive heuristic. The heuristic contains a random element to ensure that different parts of the solutions space are explored in each iteration. The parameter $\gamma$ defines the level of randomness. Too much randomness affects the quality of the initial schedules, whereas too little randomness affects diversification. The construction phase is elaborated in \autoref{sec:construction_phase}.
+
+The initial solution is subsequently optimized via a local neighborhood search until reaching a local optimum (line \ref{algline:local_search_phase}). The local search destroys and repairs the current schedule to obtain new solutions. The parameter $\pi$ specifies how much to destroy/repair in each iteration of the local search. If a new solution results in a better solution than the current best known, then the best solution is updated (lines \ref{algline:objective_comparison} and \ref{algline:update_best}). This repeats until a given execution time limit has been reached. The local search phase is described in \autoref{sec:local_search_phase}.
+
+\subsection{Objective Function} \label{sec:objective_function}
+%The quality of schedules is evaluated based on an objective function $f$, which maps schedules to real numbers, i.e., $f: x \to \mathbb{R}$. The function is defined as a weighted sum of the two optimization metrics: Queue usage, denoted $\Kappa$, and end-to-end latency, denoted $\Lambda$, as shown in \autoref{eq:f_objective}.
+%\begin{equation}
+%   \label{eq:f_objective}
+%   f(x) = c_1 \cdot \Kappa(x) + c_2 \cdot \Lambda(x)
+%\end{equation}
+%$\Kappa(x)$ denotes the total number of queues dedicated to \gls{tt} flows in $x$, i.e., the sum of \gls{tt} queues over all switches in \gls{sw_set}. $\Lambda(x)$ denotes the total end-to-end latency, i.e., the sum of individual end-to-end latencies of all flows in $x$. As a result, the weights $c_1$ and $c_2$ specify the trade-off between queue usage and end-to-end latency. The weights should be set by the systems engineer to reflect desired schedules.
+
+%\michael{Rewritten to address reviewers concern regarding normalization:}
+The quality of schedules is evaluated based on an objective function $f$, which maps schedules to real numbers, i.e., $f: x \to \mathbb{R}$.
+\begin{modifiedparagraph}
+The function is defined as a weighted sum of the two optimization metrics: The normalized queue usage, denoted $\Kappa_N$, and the normalized end-to-end latency, denoted $\Lambda_N$, as shown in \autoref{eq:f_objective}.
+\begin{equation}
+   \label{eq:f_objective}
+   f(x) = c_1 \cdot \Kappa_N(x) + c_2 \cdot \Lambda_N(x)
+\end{equation}
+$\Kappa_N(x)$ is a mapping of queue usage for \gls{tt} traffic to the interval $[0;1]$ as shown in \autoref{eq:f_normalization}.
+\begin{equation}
+   \label{eq:f_normalization}
+   K_N(x) = \frac{ K(x) - \lbound{K}(x)}{\ubound{K}(x) - \lbound{K}(x)}
+\end{equation}
+where $K(x)$ denotes the total number of queues used for \gls{tt} traffic across all egress ports. \lbound{K}(x) and \ubound{K}(x) are lower and upper bounds, respectively. The lower bound is assuming a single \gls{tt} queue in all egress ports forwarding \gls{tt} traffic, and the upper bound assumes the minimum of the available queues in the egress port and the number of \gls{tt} flows forwarded through that egress port.
+
+The total end-to-end latency is normalized in $\Lambda_N$ in a similar way. The lower bound assumes that all flows are scheduled independently, i.e., without interference from other \gls{tt} flows. The upper bound assumes the worst-case scenario where all flows have end-to-end latencies equal to their deadline. The weights $c_1$ and $c_2$ are set by the system engineers based on their desired trade-off between queue usage and end-to-end latency. 
+\end{modifiedparagraph}
+
+%\michael{I think this would be the most fair way to normalize. It is not perfect, though, as they may not be equally pessimistic --- as we have discussed.}
+
+\subsection{Greedy Randomized Heuristic} \label{sec:construction_phase}
+The construction phase is a polynomial-time greedy randomized heuristic designed to find feasible schedules which serve as good starting points for the subsequent local search. Hence, it should be computed efficiently, should not produce the same schedule in each iteration, and should not make obvious suboptimal decisions which the local search has to spend much time rectifying.
+
+\autoref{alg:construction_phase} shows the construction phase.
+\begin{algorithm}[t] \label{alg:construction_phase}
+\small
+\caption{Construction phase of GRASP} \label{alg:construction_phase}
+   \begin{algorithmic}[1]
+      \Function{GreedyRandomized}{\gls{flows_set}, $\gamma$, \gls{heuristics_set}}
+         \State $x \gets \emptyset$
+         \State $\gls{flows_set}' \gets \Call{SortByPeriod}{\gls{flows_set}}$ \label{algline:heur_order}
+         \For{$\s \in \gls{flows_set}'$} \label{algline:for_flow}
+            \State $RCL \gets \Call{RestrictedCandidateList}{\gamma, f}$ \label{algline:rcl}
+            \For{$h \in \gls{heuristics_set}$}
+               \If{$\Call{ScheduleFlow}{x, \s, h} = \textbf{true}$} \label{algline:if_schedule_flow}
+                  \State $x' \gets x \cup \s$
+                  \State $RCL.\Call{AddCandidate}{x'}$
+               \EndIf \label{algline:endif_schedule_flow}
+            \EndFor
+            \If{$RCL.\Call{Length}{} > 0$} \label{algline:if_rcl_not_empty}
+               \State $x \gets RCL.\Call{GetRandomCandidate}$ \label{algline:random_from_rcl}
+            \EndIf \label{algline:endif_rcl_not_empty}
+         \EndFor \label{algline:end_for_flow}
+         \State \Return{$x$}
+      \EndFunction
+   \end{algorithmic}
+\end{algorithm}
+Flows are ordered by their period (line \ref{algline:heur_order}). To break ties, the route length is used as an indicator of how difficult flows are to schedule. Flows are scheduled one at a time in this order (lines \ref{algline:for_flow}-\ref{algline:end_for_flow}). Given the current solution $x$, each flow is attempted scheduled using all of the different heuristics in \gls{heuristics_set}. The \gls{rcl} (line \ref{algline:rcl}) is a data structure that keeps track of the $\gamma$ best schedules produced by the heuristics with respect to the objective function $f$. When all heuristics have been considered, a random schedule is chosen from among those in \gls{rcl} (line \ref{algline:random_from_rcl}).
+
+It may be the case that a heuristic in \gls{heuristics_set} is unable to schedule a particular flow. In that case, no candidate is added to \gls{rcl} (lines \ref{algline:if_schedule_flow}-\ref{algline:endif_schedule_flow}). If all heuristics fail, \gls{rcl} is empty (lines \ref{algline:if_rcl_not_empty}-\ref{algline:endif_rcl_not_empty}), i.e., that particular flow is not included in the schedule, making it incomplete. The inner workings of $\Call{ScheduleFlow}{}$ are explained in \autoref{sec:heuristics}.
+
+\subsection{Local Search} \label{sec:local_search_phase}
+The purpose of the local search phase is to intensify the search by investigating a well-defined neighborhood of solutions similar to the current solution. This corresponds to schedules where the majority of flows are scheduled exactly as in the current solution. It is likely that a better solution arises from rescheduling only a couple of flows. The local search attempts to identify such rearrangements by removing a small subset of flows, and rescheduling them in a different way.
+
+The neighborhood is defined as follows: All the schedules which can be constructed by removing up to $\pi$ flows from $x$, and subsequently rescheduling them using one of the heuristics in \gls{heuristics_set}. If a new, improving solution is discovered, the neighborhood search is repeated for the new solution. The local search continues in this way until reaching a local minimum, from which no solution from the neighborhood improves the current solution, or until exceeding the time limit.
+
+The destroy and repair mechanisms of the local search rearranges flows compared to the original static order given by $\Call{SortByPeriod}{}$. Thus, the local search can recover from a suboptimal ordering of flows in the construction phase.
+
+\subsection{Scheduling Heuristics} \label{sec:heuristics}
+Given an existing partial solution $x$, several feasible schedules exist for a flow \s{}. In this section we present a heuristic approach for scheduling the individual frames of a single flow, while minimizing queue usage. The achieved schedule can then, in turn, be post-processed to minimize end-to-end latency. The heuristic strategy is generalized into multiple variations denoted $\gls{heuristics_set}$.
+
+The heuristic schedules the frames of \s{} sequentially, scheduling each frame on all links before moving on to the next frame. It continues in this way until either all frames in \s{} are successfully scheduled, or until failing to schedule a particular frame, i.e., failing to determine offsets for the frame such that all constraints of \autoref{sec:problem_formulation} are satisfied.
+
+To ensure that the schedule remains feasible after scheduling \s{}, each frame \f[i,m][] must be scheduled such that:
+\begin{enumerate}[(i)]
+   \item Links are idle when \f[i,m][] is scheduled for transmission, i.e., link \l{} is idle in the interval given in \autoref{eq:link_idle}. 
+   \begin{equation} \label{eq:link_idle}
+   \left[\f[i,m].\phi; \f[i,m].\phi + \f[i,m].L\right]
+   \end{equation} \label{item:link_congestion}
+   \vspace{-0.2cm}
+   
+   \item When \f[i,m][] enters a queue no other flows in $x$ are already in the queue, and \f[i,m][] leaves before other flows in $x$ enter the queue. On two adjacent links \l{} and \l[v_b,v_c], it means that queue $\s[i][{\l[v_b,v_c]}].\rho$ is empty in the interval given in \autoref{eq:empty_queue}.
+   \begin{equation} \label{eq:empty_queue}
+      \left[\f[i,m][\l].\phi; \f[i,m][{\l[v_b,v_c]}].\phi \right]
+   \end{equation} \label{item:deterministic_queues}
+   \vspace{-0.2cm}
+   
+   \item Frame \f[i,m][] is fully received in a switch before being forwarded on the next link, even with a synchronization error of $\delta$, i.e., the inequality in \autoref{eq:flow_tranmission} must be satisfied.
+   \begin{equation} \label{eq:flow_tranmission}
+      \f[i,m][\l] + \f[i,m].L + \delta \leq \f[i,m][{\l[v_b,v_c]}].\phi
+   \end{equation} \label{item:flow_transmission}
+   \vspace{-0.2cm}
+   
+\end{enumerate}
+These conditions must hold for all repetitions of \s{} within the hyperperiod. Hence, the partial schedule $x$ is folded into a single period of \s{}, i.e., the schedule is divided into $\s{}.T$-sized segments which are merged into a single $\s{}.T$-sized schedule.
+\autoref{fig:heuristic} visualizes the intersected intervals (white boxes) where links are idle and queues are empty. The $\delta$-sized spacing in $q_1$ between queue utilization boxes is introduced to model the worst-case where the clocks have drifted $\delta$~\mus{} apart. 
+\begin{figure}[t]
+\centering
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=0.8\linewidth]{figures/heuristic_q1}
+        \vspace{-0.2cm}
+        \caption{Failed attempt to schedule \s[2] on $q_1$}
+        \vspace{0.4cm}
+        \label{fig:heuristic_q1}
+   \end{subfigure}
+	\begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=0.8\linewidth]{figures/heuristic_q2}
+        \vspace{-0.2cm}
+        \caption{Feasible schedule for \s[2] on $q_2$}
+        %\vspace{0.4cm}
+        \label{fig:heuristic_q2}
+   \end{subfigure}
+   \caption{Scheduling based on link and queue availability} \label{fig:heuristic}
+\end{figure}
+
+Condition \ref{item:link_congestion} corresponds to arranging \f[i,m][] within idle-link blocks on each link. Condition \ref{item:deterministic_queues} corresponds to choosing offsets $\f[i,m][\l].\phi$ and $\f[i,m][{\l[v_b, v_c]}].\phi$ such that they are both in the same empty-queue block.
+
+\begin{figure*}[t]
+	\centering
+   % ASAP
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_asap}
+      \vspace{-0.6cm}
+	   \caption{\glsname{asap}}
+      \vspace{0.2cm}
+      \label{fig:asap}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_asap_r}
+      \vspace{-0.6cm}
+	   \caption{ASAP-L}
+      \vspace{0.2cm}
+      \label{fig:asap_l}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_asap_rl}
+      \vspace{-0.6cm}
+	   \caption{ASAP-LF}
+      \vspace{0.2cm}
+      \label{fig:asap_lf}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_asapm}
+      \vspace{-0.6cm}
+	   \caption{ASAPQ}
+      \vspace{0.2cm}
+      \label{fig:asapq}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_asapm_r}
+      \vspace{-0.6cm}
+	   \caption{ASAPQ-L}
+      \vspace{0.2cm}
+      \label{fig:asapq_l}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_asapm_rl}
+      \vspace{-0.6cm}
+	   \caption{ASAPQ-LF}
+      \vspace{0.2cm}
+      \label{fig:asapq_lf}
+	\end{subfigure}
+
+   % ALAP
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_alap}
+      \vspace{-0.6cm}
+	   \caption{\glsname{alap}}
+      \vspace{0.2cm}
+      \label{fig:alap}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_alap_l}
+      \vspace{-0.6cm}
+	   \caption{ALAP-F}
+      \vspace{0.2cm}
+      \label{fig:alap_l}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_alap_lr}
+      \vspace{-0.6cm}
+	   \caption{ALAP-FL}
+      \vspace{0.2cm}
+      \label{fig:alap_lf}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_alapm}
+      \vspace{-0.6cm}
+	   \caption{ALAPQ}
+      \label{fig:alapq}
+	\end{subfigure}
+	\begin{subfigure}{00.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_alapm_l}
+      \vspace{-0.6cm}
+	   \caption{ALAPQ-F}
+      \label{fig:alapq_l}
+	\end{subfigure}
+	\begin{subfigure}{0.30\textwidth}
+      \centering
+	   \includegraphics[width=\linewidth]{figures/scheduling_method_alapm_lr}
+      \vspace{-0.6cm}
+	   \caption{ALAPQ-FL}
+      \label{fig:alapq_lf}
+	\end{subfigure}
+	\caption{Heuristic variations for scheduling frames of a flow in an existing schedule}
+	\label{fig:heuristic_variations}
+\vspace{-2ex}
+\end{figure*}
+
+
+\autoref{fig:heuristic} illustrates an \gls{asap} approach to scheduling the frames in \s[2]. In \autoref{fig:heuristic_q1}, \s[2] is assigned to $q_1$, whereas in \autoref{fig:heuristic_q2} it is assigned to $q_2$.
+%($\s[2][{\l[SW_1, ES_3]}].\rho = 1$ and $\s[2][{\l[SW_1, ES_3]}].\rho = 2$, respectively).
+A frame is scheduled on its route, in-order, at the earliest possible offset where the link is idle and the queue is empty. If the frame is not assigned to the same empty-queue block as it was on the previous link, the algorithm backtracks and reschedules the previous frame to the next empty-queue block as shown in the \autoref{fig:heuristic_q1}. Condition \ref{item:flow_transmission} is enforced by using the frame offset on a particular link to set a lower bound for the offset on the next link.
+
+Note that the the idle-link blocks are updated each time a frame is scheduled, but the empty-queue blocks remain the same for all frames in the flow.
+This prevents frames in the same flow from overlapping in the time domain, but allows them to be queued simultaneously.
+
+The heuristic succeeds if the last frame is scheduled within the deadline and fails otherwise. In \autoref{fig:heuristic_q1} the last frame spans beyond the end of the period. Assuming $\s.D \leq \s.T$ this means that it is impossible to schedule \s[2] on $q_1$ when \s[1] is arranged as in \autoref{fig:heuristic_q1}. However, assigning \s[2] to $q_2$ is straightforward because the queue is empty, i.e., all frames trivially belong to the same (only) empty-queue block as shown in \autoref{fig:heuristic_q2}.
+Analogous to \gls{asap}, an \gls{alap} approach can be formulated by traversing the frames in reverse order, as well as scheduling on links in reverse order.
+The reader is referred to \cite{raagaardthesis}, for more details about determining feasible frame offsets using the \gls{asap} and \gls{alap} approaches.
+
+\subsubsection{Reducing queue usage}
+To minimize queue usage, the heuristic initially assigns all flow instances to the first queue. If the heuristic at some point fails to schedule a particular frame on one of its links, it may be because the queue assignment imposes too many restrictions on the feasible frame offsets like shown in \autoref{fig:heuristic_q1}. In this case, the queue assignment is incremented for some link on the route, before restarting the algorithm from the first frame. The idle-link and empty-queue blocks are used to determine which link to increment. The \gls{asap} heuristic increments the first queue assignment which allows a frame to start earlier than with the current queue assignment.
+When the algorithm terminates one of two things has happened: Either all frames have been scheduled, or some switch has no more queues available, i.e., the heuristic failed to schedule the flow.
+
+\subsubsection{Reducing end-to-end latency}
+Once a feasible solution has been found it can be post-processed to minimize end-to-end latency. Recall, that the end-to-end latency is the time from the offset of the first frame on the first link and until the finish time of the last frame on the last link. Hence, shifting the first frame to the right, or the last frame to the left reduces end-to-end latency. The intervals in which frames can safely be shifted without violating feasibility are computed from the empty-queue and idle-link intervals. A frame can be post-processed immediately when it has been scheduled on all links, or all frames can be post-processed together when the entire flow has been scheduled.
+
+\autoref{fig:heuristic_variations} shows heuristic variations including the original \gls{asap} heuristic~(\autoref{fig:asap}). White boxes represent the intervals where frames can be shifted.
+The main variation, ASAPQ, is illustrated in \autoref{fig:asapq}. It reduces the time frames spend in queues by shifting each frame instance as close as possible to the frame instance on the next link. Frame instances on the last link are not moved, which is illustrated with a thick border in \autoref{fig:asapq}. As an important side effect, the method reduces the overall time the queue is occupied, which could lead to better queue utilization and a lower total number of queues.
+
+The remaining \gls{asap} variations are different ways of post-proces\-sing the offsets once all frames have been scheduled by either \gls{asap} or ASAPQ. In ASAP-L (\autoref{fig:asap_l}) all frame instances are shifted toward the last frame instance to reduce end-to-end latency. The schedule produced by ASAP-LF (\autoref{fig:asap_lf}) has been through an additional post-processing step, where all frames instances are shifted toward the first frame instance. ASAPQ-L and ASAPQ-LF are variations of ASAPQ that have been post-processed in the same two ways.
+
+The same variations can be formulated for the \gls{alap} heuristic, but every shift is reversed compared to \gls{asap}. Consequently, the post-processing steps first move toward the \emph{first} frame instance, then the \emph{last}. \autoref{fig:alap}--\ref{fig:alapq_lf} depict the variations for \gls{alap}.

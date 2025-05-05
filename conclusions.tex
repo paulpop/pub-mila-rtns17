@@ -1,0 +1,11 @@
+\section{Conclusions}
+In this paper, we have addressed the configuration of \gls{tsn} networks in safety-critical real-time systems.
+We have formulated the problem of scheduling periodic \glsfirst{tt} flows by means of \glsfirstplural{gcl} as defined in the \IEEE{802.1Qbv} standard.
+The configuration of \glsplural{gcl} corresponds to scheduling the temporal offset of each frame, and assigning flows to queues in egress ports of switches.
+
+We have proposed a \gls{grasp}-based optimization strategy for synthesizing schedules with minimal queue usage and end-to-end latency.
+%The strategy consists of a constructive phase, which relies on underlying heuristics for arranging individual frames, and an exploration phase, which searches for improving solutions by rescheduling individual frames and reassigning flows to egress port queues.
+%This results in quickly discovering feasible solutions, which are gradually improved over time.
+The proposed metaheuristic strategy is capable of scheduling very large instances, which are intractable with previously proposed methods such as ILP and SMT. Furthermore, the strategy is well-suited for yielding the best possible configuration within a strict time limit, e.g., related to runtime reconfiguration.
+
+%\vspace{-0.1cm}

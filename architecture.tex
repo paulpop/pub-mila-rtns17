@@ -1,0 +1,26 @@
+\section{Architecture Model} \label{sec:architecture_model}
+The architecture model is an abstract representation of the physical \gls{tsn} network, including end systems, switches, and data links.
+The topology is modeled as a directed graph \gls{network}, where the vertices \gls{network_v} represent devices in the network, i.e., end systems, denoted \gls{es_set}, and switches, denoted \gls{sw_set}.
+Hence, $\gls{network_v} = \gls{es_set} \cup \gls{sw_set}$.
+The set of edges \gls{network_e} represents data links.
+A directed edge from $v_a \in \gls{network_v}$ to $v_b \in \gls{network_v}$ represents a one-way communication link from $v_a$ to $v_b$.
+Thus, a physical full-duplex link between devices $v_a$ and $v_b$ results in two edges, denoted $\l \in \gls{network_e}$ and $\l[v_b,v_a] \in \gls{network_e}$.
+\autoref{fig:architecture_model} shows the topology of a network with three end systems, $ES_1$, $ES_2$, $ES_3$, and a single switch, $SW_1$.
+\begin{figure}[b]
+\centering
+  \includegraphics[width=0.60\linewidth]{figures/architecture_model}
+\caption{Network topology}
+ \label{fig:architecture_model}
+\end{figure}
+
+Three attributes, $s$, $d$, and $c$, are associated with each link, \l{}. An object-oriented notation is used to refer to attributes of a specific link, e.g., $\l.s$. Attribute $\l.s$ denotes the transmission rate of \l, typically 100 Mbps or 1 Gbps. $\l.d$ denotes the propagation delay, which is proportional to the length of the physical link.
+There is exactly one egress port for every link and, hence, the notation \l{} refers to the link from $v_a$ to $v_b$ as well as the egress port in $v_a$ associated with the link to $v_b$. $\l.c$ refers to the number of queues available in egress port \l.
+We assume $\l.c = 1$ if $v_a \in \gls{es_set}$ and $\l.c = 8$ if $v_a \in \gls{sw_set}$.
+
+A route, $r_{k}$, is an ordered sequence of links connecting sending end system $v_a$ with receiving end system $v_b$.
+The sequence represents a data path in the network for sending messages from $v_a$ to $v_b$.
+Every route starts and ends in end systems with one or multiple intermediate switch vertices.
+\autoref{fig:architecture_model} shows two routes: $r_{1} = (\l[ES_1, SW_1],\l[SW_1, ES_3])$, and $r_{2} = (\l[ES_2, SW_1],\l[SW_1, ES_3])$.
+Note that there may be multiple redundant routes connecting the same pair of end systems depending on the topology of the network.
+We let $R_{a,b}$ denote the set of all routes connecting $v_a$ with $v_b$.
+Due to the simplicity of the topology in~\autoref{fig:architecture_model} all pair of end systems have only one route, e.g., $R_{1,3} = \{ r_1 \}$ and $R_{2,3} = \{ r_2 \}$.

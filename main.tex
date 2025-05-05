@@ -1,0 +1,124 @@
+\documentclass[sigconf, authorversion]{acmartreview}
+
+\usepackage{booktabs} % For formal tables
+\usepackage[acronyms, nogroupskip, nonumberlist, nopostdot]{glossaries}
+\makeglossaries
+\usepackage{IEEEtrantools}
+\usepackage{xargs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage[noend]{algpseudocode}
+\usepackage[inline,shortlabels]{enumitem}
+\usepackage[binary-units=true]{siunitx}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{xcolor}
+
+% TODO notes
+\usepackage{todonotes}
+ \presetkeys{todonotes}{inline, backgroundcolor=green, linecolor=black}{}
+\newcommand{\michael}[1]{\todo[backgroundcolor=green]{Michael: #1}}
+\newcommand{\paul}[1]{\todo[backgroundcolor=yellow]{Paul: #1}}
+\newenvironment*{modifiedparagraph}{}{}
+\newcommand{\modifiedtext}[1]{#1}
+
+% Copyright
+\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\setcopyright{usgov}
+%\setcopyright{usgovmixed}
+%\setcopyright{cagov}
+%\setcopyright{cagovmixed}
+
+\settopmatter{printacmref=false, printccs=false, printfolios=true}
+
+\hyphenation{post-proces-sing}
+
+% DOI
+%\acmDOI{10.475/123_4}
+
+% ISBN
+%\acmISBN{123-4567-24-567/08/06}
+
+%Conference
+%\acmConference[WOODSTOCK'97]{ACM Woodstock conference}{July 1997}{El
+%  Paso, Texas USA} 
+%\acmYear{1997}
+%\copyrightyear{2016}
+%
+%\acmPrice{15.00}
+
+
+\begin{document}
+\title{GRASP-based Gate-Control List Synthesis for IEEE~Time-Sensitive Networks (TSN)}
+
+\author{Michael L. Raagaard and Paul Pop}
+\affiliation{%
+  \institution{Technical University of Denmark}
+  \city{Kongens Lyngby}
+  \country{Denmark}
+}
+\email{michael@raagaard.dk,\quad paupo@dtu.dk}
+
+\author{Silviu S. Craciunas}
+\affiliation{%
+  \institution{TTTech Computertechnik AG}
+  \city{Vienna} 
+  \country{Austria} 
+}
+\email{scr@tttech.com}
+
+\begin{abstract}
+\gls{tsn} is an IEEE effort to bring deterministic real-time capabilities to \IEEE{802.3 Ethernet}. \gls{tsn} meets the bandwidth and dependability requirements of emerging mixed-criticality applications, while ensuring timeliness of time-critical communication. The \IEEE{802.1Qbv} sub-standard introduces time-aware gates within network devices enabling fully deterministic temporal behavior of real-time communication. For each egress port, a \gls{gcl} specifies which queue (traffic class) may transmit at which points in time. Using this functionality enables frames to be forwarded in the network in a time-triggered manner.
+In this paper, we are interested in synthesizing schedule tables for periodic time-critical flows on \gls{tsn} architectures such that timeliness is guaranteed, i.e., an assignment of critical Ethernet frames to egress port queues, and a construction of \glsplural{gcl} ensuring that all frames are schedulable.
+The problem is formulated as a multi-objective combinatorial optimization problem, which minimizes the queue utilization as well as end-to-end latency.
+We propose a scalable \gls{grasp}-based metaheuristic to solve this problem. The proposed approach is evaluated on synthetic and realistic test cases, and compared to results from related work.
+\end{abstract}
+
+%% MACROS 
+\newcommand{\IEEE}[1]{\textit{IEEE #1}}
+\newcommand{\mus}[1]{\SI{#1}{\micro\second}}
+\renewcommand{\ms}[1]{\SI{#1}{\milli\second}}
+\renewcommandx{\l}[1][1={v_a,v_b}]{\ensuremath{\left[#1 \right]}}
+\newcommandx{\f}[3][1={i,m}, 2={\l}, 3=f]{\ensuremath{#3_{#1}^{#2}}}
+\renewcommandx{\s}[3][1={i}, 2={}, 3=s]{\ensuremath{#3_{#1}^{#2}}}
+\newcommand{\Kappa}{\mathrm{K}}
+\newcommand{\lbound}[1]{\ensuremath{\underline{#1}}}
+\newcommand{\ubound}[1]{\ensuremath{\overline{#1}}}
+
+%autoref
+\renewcommand*{\figureautorefname}{Fig.}
+\renewcommand*{\sectionautorefname}{Sect.}
+\renewcommand*{\subsectionautorefname}{Sect.}
+\renewcommand*{\subsubsectionautorefname}{Sect.}
+\renewcommand*{\equationautorefname}{Eq.}
+\renewcommand*{\tableautorefname}{Table}
+\newcommand{\algorithmautorefname}{Alg.}
+
+\setlength{\abovecaptionskip}{0.5ex}
+\setlength{\belowcaptionskip}{0.3ex}
+%\setlength{\floatsep}{10ex}
+\setlength{\textfloatsep}{2ex}
+%\setlength{\bibsep}{0ex}
+%\setlength{\partopsep}{0.3ex}
+
+% glossary
+\input{abbreviations}                                   
+\input{notations}
+
+\maketitle
+\input{introduction.tex}
+\input{architecture.tex}
+\input{application.tex}
+\input{tsn.tex}
+\input{problem.tex}
+\input{grasp.tex}
+\input{evaluation.tex}
+\input{conclusions.tex}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{sigproc}
+
+\end{document}
